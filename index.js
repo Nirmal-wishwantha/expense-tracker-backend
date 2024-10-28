@@ -1,52 +1,50 @@
 const express = require('express');
-const mysql = require('mysql2');
-var bodyParser = require('body-parser')
-
+var bodyParser = require('body-parser');
+const connection =require('./dbConnection/db-connection');
 
 const app = express();
 const port = 3000;
 
 app.use(express.json());
 
-const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: 'acpt'
-});
-
-
-// parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded())
-
-// parse application/json
 app.use(bodyParser.json())
 
+const userRoute = require('./routes/users-routs')
+app.use('/api/v1/user',userRoute)
 
-db.connect(err => {
+
+
+
+
+
+
+
+connection.connect(err => {
   if (err) {
-    console.error('Error connecting to MySQL:', err);
-    return;
+      console.error('Error connecting to MySQL:', err);
+      return;
   }
   console.log('Connected to MySQL database');
 
   // Create the database if it doesn't exist
-  db.query("CREATE DATABASE IF NOT EXISTS expensive_tractor", (err) => {
-    if (err) {
-      console.error('Error creating database:', err);
-      return;
-    }
-    console.log('Database created or already exists');
-
-    // Use the database for further operations
-    db.changeUser({ database: 'expensive_tractor' }, (err) => {
+  connection.query("CREATE DATABASE IF NOT EXISTS expensive_tractor", (err) => {
       if (err) {
-        console.error('Error switching to database:', err);
-        return;
+          console.error('Error creating database:', err);
+          return;
       }
-      console.log('Switched to database expensive_tractor');
+      console.log('Database created or already exists');
 
-      // Create tables if they don't exist
-      const createUserTable = `
+      // Use the database for further operations
+      connection.changeUser({ database: 'expensive_tractor' }, (err) => {
+          if (err) {
+              console.error('Error switching to database:', err);
+              return;
+          }
+          console.log('Switched to database expensive_tractor');
+
+          // Create tables if they don't exist
+          const createUserTable = `
         CREATE TABLE IF NOT EXISTS users (
           id INT AUTO_INCREMENT PRIMARY KEY,
           name VARCHAR(255),
@@ -55,7 +53,7 @@ db.connect(err => {
         )
       `;
 
-      const createExpenseTable = `
+          const createExpenseTable = `
         CREATE TABLE IF NOT EXISTS expenses (
           id INT AUTO_INCREMENT PRIMARY KEY,
           user_id INT,
@@ -71,30 +69,41 @@ db.connect(err => {
         )
       `;
 
-      db.query(createUserTable, err => {
-        if (err) {
-          console.error('Error creating users table:', err);
-        } else {
-          console.log('Users table created or already exists');
-        }
-      });
+          connection.query(createUserTable, err => {
+              if (err) {
+                  console.error('Error creating users table:', err);
+              } else {
+                  console.log('Users table created or already exists');
+              }
+          });
 
-      db.query(createExpenseTable, err => {
-        if (err) {
-          console.error('Error creating expenses table:', err);
-        } else {
-          console.log('Expenses table created or already exists');
-        }
+          connection.query(createExpenseTable, err => {
+              if (err) {
+                  console.error('Error creating expenses table:', err);
+              } else {
+                  console.log('Expenses table created or already exists');
+              }
+          });
       });
-    });
   });
 });
 
 
 
-app.get('/', (req, res) => {
-  res.send('Hello World!');
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
