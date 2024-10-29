@@ -9,7 +9,7 @@ function getConnection() {
             host: 'localhost',
             user: 'root',
             password: 'acpt',
-            database: 'expensive_tractor'
+            database: 'expensive_tracker'
         });
         return connection;
     }

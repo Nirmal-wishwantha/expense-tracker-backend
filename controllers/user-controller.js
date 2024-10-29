@@ -1,9 +1,12 @@
-const connection = require('../dbConnection/db-connection');
+const connection = require('../db/db-connection');
 const crypto = require('crypto');
 
 const hashPassword = (password) => {
     return crypto.createHash('sha256').update(password).digest('hex');
 };
+
+
+
 
 const userRegister = (req, res) => {
     // Hash the password
@@ -18,6 +21,7 @@ const userRegister = (req, res) => {
                 res.status(500).send('Error registering user');
             } else {
                 res.send('User registered!');
+                
             }
         }
     );
