@@ -6,16 +6,16 @@ const connection = require('../db/db-connection');
 
 
 
-
+// expensive save
 const validCategories = ['education', 'food', 'entertainment', 'transport', 'shopping', 'other']; // Valid ENUM categories
 
 const addExpensive = (req, res) => {
   const { userId, category, amount } = req.body;
 
-  // Generate current date in YYYY-MM-DD format
-  const date = new Date().toISOString().slice(0, 10); // Only get the date part
+ 
+  const date = new Date().toISOString().slice(0, 10);
 
-  // Validate the category
+
   if (!validCategories.includes(category)) {
     return res.status(400).json({ error: 'Invalid category' });
   }
@@ -31,7 +31,7 @@ const addExpensive = (req, res) => {
       return res.status(500).json({ error: err.message });
     }
 
-    // Fetch the inserted or updated row data
+    
     const insertedDataQuery = `
       SELECT * FROM expenses WHERE user_id = ? AND date = ? AND category = ?
     `;
@@ -45,15 +45,15 @@ const addExpensive = (req, res) => {
         return res.status(404).json({ message: 'Expense not found' });
       }
 
-      // Since 'date' is already in YYYY-MM-DD format, use it directly
+      
       const responseData = {
         ...rows[0],
-        date: rows[0].date // Use the original date directly
+        date: rows[0].date
       };
 
       res.status(201).json({
         message: 'Expense added/updated successfully',
-        data: responseData // Return the formatted response
+        data: responseData
       });
     });
   });
@@ -69,23 +69,41 @@ const addExpensive = (req, res) => {
 
 
 // Function to update an existing expense
+
 const updateExpensive = (req, res) => {
   const { id } = req.params;
   const { category, amount } = req.body;
 
+  // Validate category
+  if (!validCategories.includes(category)) {
+    return res.status(400).json({ error: 'Invalid category' });
+  }
+
+  // Validate amount
+  if (isNaN(amount) || amount <= 0) {
+    return res.status(400).json({ error: 'Invalid amount' });
+  }
+
+  // SQL query to update expense
   const query = `
     UPDATE expenses 
-    SET ${category} = ?, amount = ? 
+    SET category = ?, amount = ? 
     WHERE id = ?
   `;
 
-  connection.query(query, [amount, amount, id], (err, result) => {
+  connection.query(query, [category, amount, id], (err, result) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    res.status(200).json({ message: 'Expense updated successfully', result });
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Expense not found' });
+    }
+
+    res.status(200).json({ message: 'Expense updated successfully' });
   });
 };
+
 
 
 
@@ -103,7 +121,7 @@ const deleteExpensive = (req, res) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    res.status(200).json({ message: 'Expense deleted successfully', result });
+    res.status(200).json({ message: 'Expense deleted successfully' });
   });
 };
 
@@ -113,22 +131,36 @@ const deleteExpensive = (req, res) => {
 
 
 // Function to get all expenses or a specific expense by ID
+
 const getExpensive = (req, res) => {
-  const { id } = req.params;
-  let query = 'SELECT * FROM expenses';
+  const { id: userId } = req.params; // Assuming `id` here refers to `user_id`
+  let query = 'SELECT *, DATE_FORMAT(date, "%Y-%m-%d") as formatted_date FROM expenses';
   const params = [];
 
-  if (id) {
-    query += ' WHERE id = ?';
-    params.push(id);
+  if (userId) {
+    query += ' WHERE user_id = ?';
+    params.push(userId);
   }
 
   connection.query(query, params, (err, result) => {
     if (err) {
       return res.status(500).json({ error: err.message });
     }
-    res.status(200).json(result);
+    
+    // Map the result to format the date field
+    const formattedResult = result.map(expense => ({
+      ...expense,
+      date: expense.formatted_date,  // Replace with formatted date
+    }));
+    
+    res.status(200).json(formattedResult);
   });
 };
+
+
+
+
+
+
 
 module.exports = { addExpensive, updateExpensive, deleteExpensive, getExpensive };

@@ -1,5 +1,13 @@
 const connection = require('../db/db-connection');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
+
+
+
+
+
+
+const JWT_SECRET = 'your_secret_key'; 
 
 const hashPassword = (password) => {
     return crypto.createHash('sha256').update(password).digest('hex');
@@ -7,9 +15,7 @@ const hashPassword = (password) => {
 
 
 
-
 const userRegister = (req, res) => {
-    // Hash the password
     const hashedPassword = hashPassword(req.body.password);
 
     connection.query(
@@ -21,7 +27,6 @@ const userRegister = (req, res) => {
                 res.status(500).send('Error registering user');
             } else {
                 res.send('User registered!');
-                
             }
         }
     );
@@ -31,7 +36,7 @@ const userRegister = (req, res) => {
 
 const userLogin = (req, res) => {
     const { email, password } = req.body;
-    const hashedPassword = hashPassword(password); // Hash the input password for comparison
+    const hashedPassword = hashPassword(password);
 
     connection.query(
         'SELECT * FROM users WHERE email = ?',
@@ -45,27 +50,39 @@ const userLogin = (req, res) => {
             } else {
                 const user = results[0];
                 if (user.password === hashedPassword) {
-                    res.send('Login successful!');
+                    
+                    const token = jwt.sign(
+                        { id: user.id, email: user.email },
+                        JWT_SECRET,
+                        { expiresIn: '24h' } 
+                    );
+
+                    res.json({ message: 'Login successful!',
+                         token,
+                         userId:user.id
+                        
+                        });
                 } else {
                     res.status(401).send('Incorrect password');
                 }
+
             }
         }
     );
 };
 
-const userGet = (req, res) => {
-    connection.query(
-        'SELECT id, name, email FROM users',
-        (err, results) => {
-            if (err) {
-                console.error('Error retrieving users:', err);
-                res.status(500).send('Error retrieving users');
-            } else {
-                res.json(results);
-            }
-        }
-    );
-};
+// const userGet = (req, res) => {
+//     connection.query(
+//         'SELECT id, name, email FROM users',
+//         (err, results) => {
+//             if (err) {
+//                 console.error('Error retrieving users:', err);
+//                 res.status(500).send('Error retrieving users');
+//             } else {
+//                 res.json(results);
+//             }
+//         }
+//     );
+// };
 
-module.exports = { userRegister, userLogin, userGet };
+module.exports = { userRegister, userLogin };

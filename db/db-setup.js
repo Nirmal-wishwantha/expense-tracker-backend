@@ -9,7 +9,7 @@ const setupDatabase = () => {
     }
     console.log('Connected to MySQL database');
 
-    // Create the database if it doesn't exist
+    
     connection.query("CREATE DATABASE IF NOT EXISTS expensive_tracker", (err) => {
       if (err) {
         console.error('Error creating database:', err);
@@ -17,7 +17,6 @@ const setupDatabase = () => {
       }
       console.log('Database created or already exists');
 
-      // Switch to the database for further operations
       connection.changeUser({ database: 'expensive_tracker' }, (err) => {
         if (err) {
           console.error('Error switching to database:', err);
@@ -25,7 +24,7 @@ const setupDatabase = () => {
         }
         console.log('Switched to database expensive_tractor');
 
-        // Create tables if they don't exist
+        
         const createUserTable = `
           CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
